@@ -1,0 +1,20 @@
+{
+  "name": "swatter",
+  "version": "1.0.0",
+  "description": "A full-stack bug tracker",
+  "scripts": {
+    "dev": "concurrently \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "test": "npm --prefix server run test",
+    "test:e2e": "npm --prefix client run test:e2e"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AaronDreyfuss/swatter.git"
+  },
+  "keywords": ["bug-tracker", "full-stack", "typescript", "react", "express", "prisma", "postgresql"],
+  "author": "Aaron Dreyfuss",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}
