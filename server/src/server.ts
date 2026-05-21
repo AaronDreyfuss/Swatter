@@ -1,6 +1,7 @@
 import express, { NextFunction, Request, Response } from 'express';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
+import prisma from './lib/prisma';
 
 dotenv.config();
 
@@ -23,6 +24,17 @@ interface AppError {
 }
 
 app.use('/api/auth', authRoutes);
+
+if (process.env.NODE_ENV === 'test') {
+  app.get('/api/test/verification-code', async (req: Request, res: Response) => {
+    const { email } = req.query;
+    const user = await prisma.user.findUnique({
+      where: { email: email as string },
+      select: { verificationCode: true },
+    });
+    res.json({ verificationCode: user?.verificationCode ?? null });
+  });
+}
 
 app.use('*', (_req: Request, res: Response) => {
   res.status(404).json({ err: 'Not found' });
