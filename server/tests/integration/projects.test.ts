@@ -1,9 +1,17 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import request from 'supertest';
 import app from '../../src/server';
 import prisma from '../../src/lib/prisma';
 import { resetDb } from '../helpers/setupDb';
 import { createTestUser, createTestProject } from '../helpers/factories';
+
+vi.mock('../../src/lib/resend', () => ({
+  default: {
+    emails: {
+      send: vi.fn().mockResolvedValue({ data: null, error: null }),
+    },
+  },
+}));
 
 const BASE = '/api/projects';
 
@@ -178,7 +186,7 @@ describe('DELETE /api/projects/:projectId/members/:userId', () => {
 
   it('returns 403 for a Member', async () => {
     const { user: admin } = await createUserWithToken();
-    const { user: member1, token: member1Token } = await createUserWithToken({ email: `m1-${Date.now()}@example.com` });
+    const { token: member1Token } = await createUserWithToken({ email: `m1-${Date.now()}@example.com` });
     const { user: member2, token: member2Token } = await createUserWithToken({ email: `m2-${Date.now()}@example.com` });
     const project = await createTestProject(admin.id);
 
@@ -223,7 +231,7 @@ describe('PATCH /api/projects/:projectId/members/:userId/role', () => {
 
   it('returns 403 for a Member', async () => {
     const { user: admin } = await createUserWithToken();
-    const { user: member1, token: member1Token } = await createUserWithToken({ email: `m1-${Date.now()}@example.com` });
+    const { token: member1Token } = await createUserWithToken({ email: `m1-${Date.now()}@example.com` });
     const { user: member2, token: member2Token } = await createUserWithToken({ email: `m2-${Date.now()}@example.com` });
     const project = await createTestProject(admin.id);
 
