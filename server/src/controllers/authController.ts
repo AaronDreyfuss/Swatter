@@ -1,10 +1,12 @@
 import { NextFunction, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 import prisma from '../lib/prisma';
 import resend from '../lib/resend';
-import { registerSchema } from '../schemas/authSchemas';
+import { JwtPayload } from '../middleware/authMiddleware';
+import { registerSchema, verifySchema, resendCodeSchema } from '../schemas/authSchemas';
 
 const authController = {
   register: async (req: Request, res: Response, next: NextFunction) => {
@@ -38,7 +40,7 @@ const authController = {
       if (process.env.NODE_ENV !== 'test') {
         if (process.env.NODE_ENV === 'production') {
           const { error } = await resend.emails.send({
-            from: 'Swatter <noreply@yourdomain.com>',
+            from: process.env.RESEND_FROM!,
             to: email,
             subject: 'Your Swatter verification code',
             html: `<p>Your verification code is: <strong>${code}</strong>. It expires in 15 minutes.</p>`,
@@ -61,6 +63,102 @@ const authController = {
 
       res.locals.data = { email: user.email };
       res.locals.status = 201;
+      return next();
+    } catch (err) {
+      return next(err);
+    }
+  },
+
+  verify: async (req: Request, res: Response, next: NextFunction) => {
+    const result = verifySchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ err: result.error.errors[0].message });
+    }
+
+    const { email, code } = result.data;
+
+    try {
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (!user) {
+        return res.status(404).json({ err: 'User not found' });
+      }
+
+      if (user.verificationCode !== code) {
+        return res.status(400).json({ err: 'Invalid verification code' });
+      }
+
+      if (!user.verificationExpiry || user.verificationExpiry < new Date()) {
+        return res.status(400).json({ err: 'Verification code has expired' });
+      }
+
+      const updated = await prisma.user.update({
+        where: { email },
+        data: { isVerified: true, verificationCode: null, verificationExpiry: null },
+      });
+
+      const payload: JwtPayload = { id: updated.id };
+      const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '7d' });
+
+      res.locals.data = { token, user: { id: updated.id, email: updated.email } };
+      res.locals.status = 200;
+      return next();
+    } catch (err) {
+      return next(err);
+    }
+  },
+
+  resendCode: async (req: Request, res: Response, next: NextFunction) => {
+    const result = resendCodeSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ err: result.error.errors[0].message });
+    }
+
+    const { email } = result.data;
+
+    try {
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (!user) {
+        return res.status(404).json({ err: 'User not found' });
+      }
+
+      if (user.isVerified) {
+        return res.status(400).json({ err: 'Account is already verified' });
+      }
+
+      const code = crypto.randomInt(10000, 100000).toString();
+      const expiry = new Date(Date.now() + 15 * 60 * 1000);
+
+      await prisma.user.update({
+        where: { email },
+        data: { verificationCode: code, verificationExpiry: expiry },
+      });
+
+      if (process.env.NODE_ENV !== 'test') {
+        if (process.env.NODE_ENV === 'production') {
+          const { error } = await resend.emails.send({
+            from: process.env.RESEND_FROM!,
+            to: email,
+            subject: 'Your new Swatter verification code',
+            html: `<p>Your new verification code is: <strong>${code}</strong>. It expires in 15 minutes.</p>`,
+          });
+          if (error) console.error('Resend error:', error);
+        } else {
+          const transporter = nodemailer.createTransport({
+            host: 'sandbox.smtp.mailtrap.io',
+            port: 2525,
+            auth: { user: process.env.MAILTRAP_USER, pass: process.env.MAILTRAP_PASS },
+          });
+          await transporter.sendMail({
+            from: 'Swatter <noreply@swatter.com>',
+            to: email,
+            subject: 'Your new Swatter verification code',
+            html: `<p>Your new verification code is: <strong>${code}</strong>. It expires in 15 minutes.</p>`,
+          });
+        }
+      }
+
+      res.locals.data = { message: 'A new verification code has been sent to your email.' };
+      res.locals.status = 200;
       return next();
     } catch (err) {
       return next(err);

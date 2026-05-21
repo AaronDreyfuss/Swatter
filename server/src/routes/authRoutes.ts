@@ -17,4 +17,16 @@ router.post(
   (_req, res) => res.status(res.locals.status as number).json(res.locals.data)
 );
 
+router.post(
+  '/verify',
+  authController.verify,
+  (_req, res) => res.status(res.locals.status as number).json(res.locals.data)
+);
+
+router.post(
+  '/resend-code',
+  authController.resendCode,
+  (_req, res) => res.status(res.locals.status as number).json(res.locals.data)
+);
+
 export default router;
