@@ -84,7 +84,12 @@ const projectController = {
         return res.status(404).json({ err: 'Project not found' });
       }
 
-      res.locals.data = { ...membership.project, role: membership.role };
+      // Members do not receive the invite code - only Admins can share it
+      res.locals.data = {
+        ...membership.project,
+        role: membership.role,
+        inviteCode: membership.role === Role.ADMIN ? membership.project.inviteCode : undefined,
+      };
       res.locals.status = 200;
       return next();
     } catch (err) {
