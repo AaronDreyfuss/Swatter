@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
-import crypto from 'crypto';
 import { Role, Severity } from '@prisma/client';
 import prisma from '../../src/lib/prisma';
+import { generateInviteCode } from '../../src/lib/inviteCode';
 
 export async function createTestUser(overrides: {
   email?: string;
@@ -26,7 +26,7 @@ export async function createTestProject(adminId: string, overrides: {
   const project = await prisma.project.create({
     data: {
       name: 'Test Project',
-      inviteCode: crypto.randomBytes(4).toString('hex').toUpperCase(),
+      inviteCode: generateInviteCode(),
       ...overrides,
     },
   });
