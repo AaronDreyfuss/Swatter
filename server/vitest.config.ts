@@ -1,4 +1,8 @@
 import { defineConfig } from 'vitest/config';
+import dotenv from 'dotenv';
+
+// Load test env before workers spin up so DATABASE_URL is set when Prisma client is created
+dotenv.config({ path: '.env.test' });
 
 export default defineConfig({
   test: {
