@@ -1,5 +1,6 @@
 import express, { NextFunction, Request, Response } from 'express';
 import dotenv from 'dotenv';
+import authRoutes from './routes/authRoutes';
 
 dotenv.config();
 
@@ -21,13 +22,13 @@ interface AppError {
   status?: number;
 }
 
-// Routes will be mounted here as they are built
+app.use('/api/auth', authRoutes);
 
 app.use('*', (_req: Request, res: Response) => {
   res.status(404).json({ err: 'Not found' });
 });
 
-app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   const defaultErr: Required<AppError> = {
     log: 'Express error handler caught unknown middleware error',
     status: 500,
