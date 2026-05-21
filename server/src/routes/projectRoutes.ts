@@ -13,6 +13,12 @@ router.get(
 );
 
 router.post(
+  '/join',
+  projectController.joinProject,
+  (_req, res) => res.status(res.locals.status as number).json(res.locals.data)
+);
+
+router.post(
   '/',
   projectController.createProject,
   (_req, res) => res.status(res.locals.status as number).json(res.locals.data)
