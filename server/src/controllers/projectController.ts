@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { Role } from '@prisma/client';
 import prisma from '../lib/prisma';
-import { createProjectSchema, joinProjectSchema } from '../schemas/projectSchemas';
+import { createProjectSchema, joinProjectSchema, changeMemberRoleSchema } from '../schemas/projectSchemas';
 import { generateInviteCode } from '../lib/inviteCode';
 
 const projectController = {
@@ -35,6 +35,7 @@ const projectController = {
       return next(err);
     }
   },
+  
   joinProject: async (req: Request, res: Response, next: NextFunction) => {
     const result = joinProjectSchema.safeParse(req.body);
     if (!result.success) {
@@ -84,6 +85,46 @@ const projectController = {
       }
 
       res.locals.data = { ...membership.project, role: membership.role };
+      res.locals.status = 200;
+      return next();
+    } catch (err) {
+      return next(err);
+    }
+  },
+
+  changeMemberRole: async (req: Request, res: Response, next: NextFunction) => {
+    const result = changeMemberRoleSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ err: result.error.errors[0].message });
+    }
+
+    const { role } = result.data;
+    const { projectId, userId: targetUserId } = req.params;
+
+    try {
+      const member = await prisma.projectMember.findUnique({
+        where: { userId_projectId: { userId: targetUserId, projectId } },
+      });
+
+      if (!member) {
+        return res.status(404).json({ err: 'Member not found' });
+      }
+
+      if (role === 'MEMBER' && member.role === Role.ADMIN) {
+        const adminCount = await prisma.projectMember.count({
+          where: { projectId, role: Role.ADMIN },
+        });
+        if (adminCount === 1) {
+          return res.status(400).json({ err: 'Cannot demote the last admin' });
+        }
+      }
+
+      const updated = await prisma.projectMember.update({
+        where: { userId_projectId: { userId: targetUserId, projectId } },
+        data: { role },
+      });
+
+      res.locals.data = updated;
       res.locals.status = 200;
       return next();
     } catch (err) {
