@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum Status {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+model User {
+  id                 String          @id @default(cuid())
+  email              String          @unique
+  password           String
+  isVerified         Boolean         @default(false)
+  verificationCode   String?
+  verificationExpiry DateTime?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  projectMembers     ProjectMember[]
+  createdBugs        Bug[]           @relation("BugCreator")
+  assignedBugs       Bug[]           @relation("BugAssignee")
+  comments           Comment[]
+}
+
+model Project {
+  id         String          @id @default(cuid())
+  name       String
+  inviteCode String          @unique
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  members    ProjectMember[]
+  bugs       Bug[]
+}
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  role      Role
+  createdAt DateTime @default(now())
+  userId    String
+  projectId String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+}
+
+model Bug {
+  id               String    @id @default(cuid())
+  title            String
+  description      String
+  expectedBehavior String
+  actualBehavior   String
+  errorMessage     String?
+  severity         Severity
+  status           Status    @default(OPEN)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  projectId        String
+  creatorId        String
+  assignedToId     String?
+  project          Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator          User      @relation("BugCreator", fields: [creatorId], references: [id])
+  assignedTo       User?     @relation("BugAssignee", fields: [assignedToId], references: [id], onDelete: SetNull) // clears assignment if user is deleted rather than blocking deletion or removing the bug
+  comments         Comment[]
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  bugId     String
+  authorId  String
+  bug       Bug      @relation(fields: [bugId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id])
+}
