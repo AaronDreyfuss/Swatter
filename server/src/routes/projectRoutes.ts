@@ -9,10 +9,29 @@ const router = Router();
 
 router.use(authMiddleware);
 
-router.get('/', projectController.getProjects, respond);
-router.get('/:projectId', projectController.getProject, respond);
-router.post('/join', projectController.joinProject, respond);
-router.post('/', projectController.createProject, respond);
+router.get(
+  '/',
+  projectController.getProjects,
+  respond
+);
+
+router.get(
+  '/:projectId',
+  projectController.getProject,
+  respond
+);
+
+router.post(
+  '/join',
+  projectController.joinProject,
+  respond
+);
+
+router.post(
+  '/',
+  projectController.createProject,
+  respond
+);
 
 router.delete(
   '/:projectId/members/:userId',
