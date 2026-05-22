@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
+import { Role } from '@prisma/client';
 import prisma from '../lib/prisma';
-import { createBugSchema, getBugsQuerySchema } from '../schemas/bugSchemas';
+import { createBugSchema, getBugsQuerySchema, updateBugSchema } from '../schemas/bugSchemas';
 
 const bugController = {
   createBug: async (req: Request, res: Response, next: NextFunction) => {
@@ -35,6 +36,46 @@ const bugController = {
       return next(err);
     }
   },
+  updateBug: async (req: Request, res: Response, next: NextFunction) => {
+    const result = updateBugSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ err: result.error.errors[0].message });
+    }
+
+    const { projectId, bugId } = req.params;
+    const userId = req.user!.id;
+
+    try {
+      const [bug, member] = await Promise.all([
+        prisma.bug.findFirst({ where: { id: bugId, projectId } }),
+        prisma.projectMember.findUnique({
+          where: { userId_projectId: { userId, projectId } },
+        }),
+      ]);
+
+      if (!bug) {
+        return res.status(404).json({ err: 'Bug not found' });
+      }
+
+      if (bug.creatorId !== userId && member?.role !== Role.ADMIN) {
+        return res.status(403).json({ err: 'Access denied' });
+      }
+
+      const { title, description, expectedBehavior, actualBehavior, errorMessage, severity, status } = result.data;
+
+      const updated = await prisma.bug.update({
+        where: { id: bugId },
+        data: { title, description, expectedBehavior, actualBehavior, errorMessage, severity, status },
+      });
+
+      res.locals.data = updated;
+      res.locals.status = 200;
+      return next();
+    } catch (err) {
+      return next(err);
+    }
+  },
+
   getBug: async (req: Request, res: Response, next: NextFunction) => {
     const { projectId, bugId } = req.params;
 

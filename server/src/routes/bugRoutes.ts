@@ -8,6 +8,13 @@ const router = Router();
 
 router.use(authMiddleware);
 
+router.patch(
+  '/:projectId/bugs/:bugId',
+  roleMiddleware(Role.MEMBER),
+  bugController.updateBug,
+  (_req, res) => res.status(res.locals.status as number).json(res.locals.data)
+);
+
 router.get(
   '/:projectId/bugs/:bugId',
   roleMiddleware(Role.MEMBER),
