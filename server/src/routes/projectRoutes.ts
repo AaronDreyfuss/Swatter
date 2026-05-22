@@ -1,49 +1,31 @@
 import { Router } from 'express';
+import { Role } from '@prisma/client';
 import authMiddleware from '../middleware/authMiddleware';
 import roleMiddleware from '../middleware/roleMiddleware';
-import { Role } from '@prisma/client';
 import projectController from '../controllers/projectController';
+import respond from '../lib/respond';
 
 const router = Router();
 
 router.use(authMiddleware);
 
-router.get(
-  '/',
-  projectController.getProjects,
-  (_req, res) => res.status(res.locals.status as number).json(res.locals.data)
-);
-
-router.get(
-  '/:projectId',
-  projectController.getProject,
-  (_req, res) => res.status(res.locals.status as number).json(res.locals.data)
-);
-
-router.post(
-  '/join',
-  projectController.joinProject,
-  (_req, res) => res.status(res.locals.status as number).json(res.locals.data)
-);
+router.get('/', projectController.getProjects, respond);
+router.get('/:projectId', projectController.getProject, respond);
+router.post('/join', projectController.joinProject, respond);
+router.post('/', projectController.createProject, respond);
 
 router.delete(
   '/:projectId/members/:userId',
   roleMiddleware(Role.ADMIN),
   projectController.removeMember,
-  (_req, res) => res.status(res.locals.status as number).json(res.locals.data)
+  respond
 );
 
 router.patch(
   '/:projectId/members/:userId/role',
   roleMiddleware(Role.ADMIN),
   projectController.changeMemberRole,
-  (_req, res) => res.status(res.locals.status as number).json(res.locals.data)
-);
-
-router.post(
-  '/',
-  projectController.createProject,
-  (_req, res) => res.status(res.locals.status as number).json(res.locals.data)
+  respond
 );
 
 export default router;

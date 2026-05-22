@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import authController from '../controllers/authController';
+import respond from '../lib/respond';
 
 const router = Router();
 
@@ -14,26 +15,26 @@ router.post(
   '/register',
   authLimiter,
   authController.register,
-  (_req, res) => res.status(res.locals.status as number).json(res.locals.data)
+  respond
 );
 
 router.post(
   '/login',
   authLimiter,
   authController.login,
-  (_req, res) => res.status(res.locals.status as number).json(res.locals.data)
+  respond
 );
 
 router.post(
   '/verify',
   authController.verify,
-  (_req, res) => res.status(res.locals.status as number).json(res.locals.data)
+  respond
 );
 
 router.post(
   '/resend-code',
   authController.resendCode,
-  (_req, res) => res.status(res.locals.status as number).json(res.locals.data)
+  respond
 );
 
 export default router;
