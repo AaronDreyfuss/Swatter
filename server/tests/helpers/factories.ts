@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { Role, Severity } from '@prisma/client';
+import { Role, Severity, Status } from '@prisma/client';
 import prisma from '../../src/lib/prisma';
 import { generateInviteCode } from '../../src/lib/inviteCode';
 
@@ -49,6 +49,7 @@ export async function createTestBug(projectId: string, creatorId: string, overri
   actualBehavior?: string;
   errorMessage?: string;
   severity?: Severity;
+  status?: Status;
   assignedToId?: string;
 } = {}) {
   return prisma.bug.create({
