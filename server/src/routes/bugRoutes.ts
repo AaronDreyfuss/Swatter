@@ -8,6 +8,13 @@ const router = Router();
 
 router.use(authMiddleware);
 
+router.patch(
+  '/:projectId/bugs/:bugId/assign',
+  roleMiddleware(Role.MEMBER),
+  bugController.assignBug,
+  (_req, res) => res.status(res.locals.status as number).json(res.locals.data)
+);
+
 router.delete(
   '/:projectId/bugs/:bugId',
   roleMiddleware(Role.MEMBER),

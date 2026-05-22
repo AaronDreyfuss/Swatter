@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { Role } from '@prisma/client';
 import prisma from '../lib/prisma';
-import { createBugSchema, getBugsQuerySchema, updateBugSchema } from '../schemas/bugSchemas';
+import { createBugSchema, getBugsQuerySchema, updateBugSchema, assignBugSchema } from '../schemas/bugSchemas';
 
 const bugController = {
   createBug: async (req: Request, res: Response, next: NextFunction) => {
@@ -36,6 +36,57 @@ const bugController = {
       return next(err);
     }
   },
+  assignBug: async (req: Request, res: Response, next: NextFunction) => {
+    const result = assignBugSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ err: result.error.errors[0].message });
+    }
+
+    const { assignedToId } = result.data;
+    const { projectId, bugId } = req.params;
+    const userId = req.user!.id;
+
+    try {
+      const [bug, member] = await Promise.all([
+        prisma.bug.findFirst({ where: { id: bugId, projectId } }),
+        prisma.projectMember.findUnique({
+          where: { userId_projectId: { userId, projectId } },
+        }),
+      ]);
+
+      if (!bug) {
+        return res.status(404).json({ err: 'Bug not found' });
+      }
+
+      if (member?.role === Role.ADMIN) {
+        if (assignedToId !== null) {
+          const targetMember = await prisma.projectMember.findUnique({
+            where: { userId_projectId: { userId: assignedToId, projectId } },
+          });
+          if (!targetMember) {
+            return res.status(400).json({ err: 'Assignee is not a project member' });
+          }
+        }
+      } else {
+        // Members can only claim an unassigned bug for themselves
+        if (bug.assignedToId !== null || assignedToId !== userId) {
+          return res.status(403).json({ err: 'Access denied' });
+        }
+      }
+
+      const updated = await prisma.bug.update({
+        where: { id: bugId },
+        data: { assignedToId },
+      });
+
+      res.locals.data = updated;
+      res.locals.status = 200;
+      return next();
+    } catch (err) {
+      return next(err);
+    }
+  },
+
   deleteBug: async (req: Request, res: Response, next: NextFunction) => {
     const { projectId, bugId } = req.params;
     const userId = req.user!.id;

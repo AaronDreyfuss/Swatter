@@ -21,6 +21,10 @@ export const updateBugSchema = z.object({
   assignedToId: z.string().nullable().optional(), // null clears the assignment
 });
 
+export const assignBugSchema = z.object({
+  assignedToId: z.string().nullable(),
+});
+
 export const getBugsQuerySchema = z.object({
   status: z.enum(['OPEN', 'IN_PROGRESS', 'RESOLVED']).optional(),
   severity: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional(),
