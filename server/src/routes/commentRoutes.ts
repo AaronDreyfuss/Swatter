@@ -16,6 +16,13 @@ router.post(
   respond
 );
 
+router.delete(
+  '/:projectId/bugs/:bugId/comments/:commentId',
+  roleMiddleware(Role.MEMBER),
+  commentController.deleteComment,
+  respond
+);
+
 router.patch(
   '/:projectId/bugs/:bugId/comments/:commentId',
   roleMiddleware(Role.MEMBER),
