@@ -19,9 +19,8 @@ function Projects() {
     setCreateError('');
     setCreateLoading(true);
     try {
-      const project = await createProject(projectName);
+      await createProject(projectName);
       setProjectName('');
-      navigate(`/projects/${project.id}`);
     } catch (err: unknown) {
       const message =
         err instanceof Error && 'response' in err
@@ -38,9 +37,8 @@ function Projects() {
     setJoinError('');
     setJoinLoading(true);
     try {
-      const project = await joinProject(inviteCode);
+      await joinProject(inviteCode);
       setInviteCode('');
-      navigate(`/projects/${project.id}`);
     } catch (err: unknown) {
       const message =
         err instanceof Error && 'response' in err
