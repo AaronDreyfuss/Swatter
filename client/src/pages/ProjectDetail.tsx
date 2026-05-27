@@ -86,7 +86,7 @@ function ProjectDetail() {
         <ul>
           {filteredBugs.map((bug) => (
             <li key={bug.id}>
-              <button onClick={() => navigate(`/bugs/${bug.id}`)}>
+              <button onClick={() => navigate(`/projects/${projectId}/bugs/${bug.id}`)}>
                 {bug.title}
               </button>
               <span>{bug.severity}</span>

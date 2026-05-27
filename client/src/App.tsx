@@ -32,7 +32,7 @@ function AppRoutes() {
       <Route path="/verify" element={<Verify />} />
       <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
       <Route path="/projects/:projectId" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
-      <Route path="/bugs/:bugId" element={<ProtectedRoute><BugDetail /></ProtectedRoute>} />
+      <Route path="/projects/:projectId/bugs/:bugId" element={<ProtectedRoute><BugDetail /></ProtectedRoute>} />
     </Routes>
     </>
   );
