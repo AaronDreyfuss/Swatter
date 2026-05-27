@@ -1,9 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import useDarkMode from '../hooks/useDarkMode';
 
 function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { isDark, toggle } = useDarkMode();
 
   if (!user) return null;
 
@@ -19,6 +21,7 @@ function Navbar() {
       {/* right side: flex row, gap, align center */}
       <div>
         <span>{user.email}</span>
+        <button onClick={toggle}>{isDark ? 'Light' : 'Dark'}</button>
         <button onClick={handleLogout}>Log out</button>
       </div>
     </nav>
