@@ -13,7 +13,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'cross-env NODE_ENV=test npx tsx src/server.ts',
+      command: 'cross-env NODE_ENV=test npx tsx src/start.ts',
       cwd: '../server',
       port: 3000,
       reuseExistingServer: !process.env.CI,

@@ -2,7 +2,7 @@
   "name": "swatter-server",
   "version": "1.0.0",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx src/start.ts",
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest"
