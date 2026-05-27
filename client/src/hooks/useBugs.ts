@@ -63,7 +63,12 @@ function useBugs(projectId: string) {
     return updated;
   };
 
-  return { data, loading, error, createBug, updateBug, deleteBug, assignBug };
+  const getBug = async (bugId: string): Promise<Bug> => {
+    const { data: bug } = await api.get<Bug>(`/projects/${projectId}/bugs/${bugId}`);
+    return bug;
+  };
+
+  return { data, loading, error, createBug, updateBug, deleteBug, assignBug, getBug };
 }
 
 export default useBugs;
