@@ -60,31 +60,47 @@ function Verify() {
   };
 
   return (
-    <div>
-      <h1>Verify your email</h1>
-      {email && <p>A 5-digit code was sent to {email}.</p>}
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="code">Verification code</label>
-          <input
-            id="code"
-            type="text"
-            name="code"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            maxLength={5}
-            required
-          />
+    <div className="flex min-h-screen items-center justify-center px-4 bg-gray-50 dark:bg-gray-900">
+      <div className="w-full max-w-md">
+        <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-2">
+          Verify your email
+        </h1>
+        {email && (
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400 mb-8">
+            A 5-digit code was sent to {email}.
+          </p>
+        )}
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-8 space-y-5"
+        >
+          <div>
+            <label htmlFor="code" className="form-label">Verification code</label>
+            <input
+              id="code"
+              type="text"
+              name="code"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              maxLength={5}
+              required
+              className="input"
+            />
+          </div>
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {resendSuccess && (
+            <p className="text-sm text-green-600 dark:text-green-400">{resendSuccess}</p>
+          )}
+          <button type="submit" disabled={loading} className="btn-primary w-full">
+            {loading ? 'Verifying...' : 'Verify'}
+          </button>
+        </form>
+        <div className="text-center mt-4">
+          <button onClick={handleResend} disabled={resendLoading} className="btn-ghost">
+            {resendLoading ? 'Sending...' : 'Resend code'}
+          </button>
         </div>
-        {error && <p>{error}</p>}
-        {resendSuccess && <p>{resendSuccess}</p>}
-        <button type="submit" disabled={loading}>
-          {loading ? 'Verifying...' : 'Verify'}
-        </button>
-      </form>
-      <button onClick={handleResend} disabled={resendLoading}>
-        {resendLoading ? 'Sending...' : 'Resend code'}
-      </button>
+      </div>
     </div>
   );
 }
