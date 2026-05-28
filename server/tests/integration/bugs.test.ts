@@ -144,6 +144,26 @@ describe('GET /:projectId/bugs/:bugId', () => {
     expect(res.body.comments[0].author).toBeDefined();
   });
 
+  it('includes assignedTo with id and email when the bug is assigned', async () => {
+    const { user: admin, token } = await createUserWithToken();
+    const project = await createTestProject(admin.id);
+    const bug = await createTestBug(project.id, admin.id);
+
+    await request(app)
+      .patch(`${BASE(project.id)}/${bug.id}/assign`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ assignedToId: admin.id });
+
+    const res = await request(app)
+      .get(`${BASE(project.id)}/${bug.id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.assignedTo).toBeDefined();
+    expect(res.body.assignedTo.id).toBe(admin.id);
+    expect(res.body.assignedTo.email).toBe(admin.email);
+  });
+
   it('returns 404 for a nonexistent bug', async () => {
     const { user: admin, token } = await createUserWithToken();
     const project = await createTestProject(admin.id);

@@ -27,6 +27,7 @@ const bugController = {
           creatorId,
           assignedToId: null,
         },
+        include: { assignedTo: { select: { id: true, email: true } } },
       });
 
       res.locals.data = bug;
@@ -77,6 +78,7 @@ const bugController = {
       const updated = await prisma.bug.update({
         where: { id: bugId },
         data: { assignedToId },
+        include: { assignedTo: { select: { id: true, email: true } } },
       });
 
       res.locals.data = updated;
@@ -147,6 +149,7 @@ const bugController = {
       const updated = await prisma.bug.update({
         where: { id: bugId },
         data: { title, description, expectedBehavior, actualBehavior, errorMessage, severity, status },
+        include: { assignedTo: { select: { id: true, email: true } } },
       });
 
       res.locals.data = updated;
@@ -164,6 +167,7 @@ const bugController = {
       const bug = await prisma.bug.findFirst({
         where: { id: bugId, projectId },
         include: {
+          assignedTo: { select: { id: true, email: true } },
           comments: {
             orderBy: { createdAt: 'asc' },
             include: {
@@ -202,6 +206,7 @@ const bugController = {
           ...(severity ? { severity } : {}),
         },
         orderBy: { createdAt: 'desc' },
+        include: { assignedTo: { select: { id: true, email: true } } },
       });
 
       res.locals.data = bugs;
