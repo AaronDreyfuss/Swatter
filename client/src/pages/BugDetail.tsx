@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import useBugs from '../hooks/useBugs';
 import useProjects from '../hooks/useProjects';
 import { useAuth } from '../hooks/useAuth';
@@ -21,6 +21,7 @@ const statusClasses: Record<BugStatus, string> = {
 };
 
 function BugDetail() {
+  const navigate = useNavigate();
   const { projectId, bugId } = useParams<{ projectId: string; bugId: string }>();
   const { user } = useAuth();
   const { getBug, updateBug, assignBug } = useBugs(projectId!);
@@ -69,6 +70,9 @@ function BugDetail() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
+      <button onClick={() => navigate(`/projects/${projectId}`)} className="btn-ghost text-sm mb-3">
+        ← Project
+      </button>
       <div className="flex items-start justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{bug.title}</h1>
         <button onClick={() => setModalOpen(true)} className="btn-secondary shrink-0">
