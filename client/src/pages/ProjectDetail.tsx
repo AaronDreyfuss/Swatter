@@ -2,19 +2,24 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useProjects from '../hooks/useProjects';
 import useBugs from '../hooks/useBugs';
+import { useAuth } from '../hooks/useAuth';
 import BugModal from '../components/BugModal';
 import BugCard from '../components/BugCard';
-import { Project, Bug, BugStatus, Severity } from '../types';
+import MemberPanel from '../components/MemberPanel';
+import { Project, Bug, Member, BugStatus, Severity, Role } from '../types';
 
 function ProjectDetail() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const { getProject } = useProjects();
+  const { user } = useAuth();
+  const { getProject, getProjectMembers, removeMember, changeMemberRole } = useProjects();
   const { data: bugs, loading: bugsLoading, error: bugsError, createBug, updateBug } = useBugs(projectId!);
 
   const [project, setProject] = useState<Project | null>(null);
   const [projectLoading, setProjectLoading] = useState(true);
   const [projectError, setProjectError] = useState('');
+
+  const [members, setMembers] = useState<Member[]>([]);
 
   const [statusFilter, setStatusFilter] = useState<BugStatus | 'ALL'>('ALL');
   const [severityFilter, setSeverityFilter] = useState<Severity | 'ALL'>('ALL');
@@ -27,7 +32,22 @@ function ProjectDetail() {
       .then(setProject)
       .catch(() => setProjectError('Failed to load project.'))
       .finally(() => setProjectLoading(false));
+    getProjectMembers(projectId).then(setMembers).catch(() => {});
   }, [projectId]);
+
+  const refreshMembers = () => {
+    if (projectId) getProjectMembers(projectId).then(setMembers).catch(() => {});
+  };
+
+  const handleRemoveMember = async (userId: string) => {
+    await removeMember(projectId!, userId);
+    refreshMembers();
+  };
+
+  const handleRoleChange = async (userId: string, role: Role) => {
+    await changeMemberRole(projectId!, userId, role);
+    refreshMembers();
+  };
 
   const filteredBugs = bugs.filter((bug) => {
     if (statusFilter !== 'ALL' && bug.status !== statusFilter) return false;
@@ -106,6 +126,16 @@ function ProjectDetail() {
             />
           ))}
         </ul>
+      )}
+
+      {members.length > 0 && (
+        <MemberPanel
+          members={members}
+          currentUserId={user!.id}
+          currentUserRole={project.role}
+          onRemove={handleRemoveMember}
+          onRoleChange={handleRoleChange}
+        />
       )}
 
       {modalOpen && (

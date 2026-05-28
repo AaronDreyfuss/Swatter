@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
-import { Project, Member } from '../types';
+import { Project, Member, Role } from '../types';
 
 function useProjects() {
   const [data, setData] = useState<Project[]>([]);
@@ -37,7 +37,15 @@ function useProjects() {
     return members;
   };
 
-  return { data, loading, error, createProject, joinProject, getProject, getProjectMembers };
+  const removeMember = async (projectId: string, userId: string): Promise<void> => {
+    await api.delete(`/projects/${projectId}/members/${userId}`);
+  };
+
+  const changeMemberRole = async (projectId: string, userId: string, role: Role): Promise<void> => {
+    await api.patch(`/projects/${projectId}/members/${userId}/role`, { role });
+  };
+
+  return { data, loading, error, createProject, joinProject, getProject, getProjectMembers, removeMember, changeMemberRole };
 }
 
 export default useProjects;
