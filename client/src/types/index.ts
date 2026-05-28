@@ -29,6 +29,12 @@ export interface ProjectMember {
   createdAt: string;
 }
 
+export interface Member {
+  userId: string;
+  email: string;
+  role: Role;
+}
+
 export interface Bug {
   id: string;
   title: string;
@@ -41,6 +47,7 @@ export interface Bug {
   projectId: string;
   creatorId: string;
   assignedToId: string | null;
+  assignedTo: Pick<User, 'id' | 'email'> | null;
   createdAt: string;
   updatedAt: string;
   comments?: Comment[];

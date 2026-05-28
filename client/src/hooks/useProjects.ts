@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
-import { Project } from '../types';
+import { Project, Member } from '../types';
 
 function useProjects() {
   const [data, setData] = useState<Project[]>([]);
@@ -32,7 +32,12 @@ function useProjects() {
     return project;
   };
 
-  return { data, loading, error, createProject, joinProject, getProject };
+  const getProjectMembers = async (id: string): Promise<Member[]> => {
+    const { data: members } = await api.get<Member[]>(`/projects/${id}/members`);
+    return members;
+  };
+
+  return { data, loading, error, createProject, joinProject, getProject, getProjectMembers };
 }
 
 export default useProjects;
