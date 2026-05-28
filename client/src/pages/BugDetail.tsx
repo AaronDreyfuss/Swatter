@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import useBugs from '../hooks/useBugs';
+import useProjects from '../hooks/useProjects';
+import { useAuth } from '../hooks/useAuth';
 import BugModal from '../components/BugModal';
 import CommentThread from '../components/CommentThread';
-import { Bug, Severity, BugStatus } from '../types';
+import { Bug, Member, Severity, BugStatus } from '../types';
 
 const severityClasses: Record<Severity, string> = {
   LOW: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
@@ -20,12 +22,17 @@ const statusClasses: Record<BugStatus, string> = {
 
 function BugDetail() {
   const { projectId, bugId } = useParams<{ projectId: string; bugId: string }>();
-  const { getBug, updateBug } = useBugs(projectId!);
+  const { user } = useAuth();
+  const { getBug, updateBug, assignBug } = useBugs(projectId!);
+  const { getProjectMembers } = useProjects();
 
   const [bug, setBug] = useState<Bug | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
+
+  const [members, setMembers] = useState<Member[]>([]);
+  const [assignLoading, setAssignLoading] = useState(false);
 
   useEffect(() => {
     if (!projectId || !bugId) return;
@@ -33,6 +40,7 @@ function BugDetail() {
       .then(setBug)
       .catch(() => setError('Failed to load bug.'))
       .finally(() => setLoading(false));
+    getProjectMembers(projectId).then(setMembers).catch(() => {});
   }, [projectId, bugId]);
 
   const handleUpdate = async (payload: Parameters<typeof updateBug>[1]) => {
@@ -41,9 +49,23 @@ function BugDetail() {
     return updated;
   };
 
+  const handleAssign = async (assignedToId: string | null) => {
+    setAssignLoading(true);
+    try {
+      const updated = await assignBug(bugId!, assignedToId);
+      setBug(updated);
+    } finally {
+      setAssignLoading(false);
+    }
+  };
+
   if (loading) return <p className="text-center py-12 text-gray-500 dark:text-gray-400">Loading bug...</p>;
   if (error) return <p className="text-center py-12 text-red-600 dark:text-red-400">{error}</p>;
   if (!bug) return null;
+
+  const currentUserRole = members.find((m) => m.userId === user?.id)?.role ?? 'MEMBER';
+  const isAdmin = currentUserRole === 'ADMIN';
+  const assignedToSelf = bug.assignedToId === user?.id;
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
@@ -54,7 +76,7 @@ function BugDetail() {
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-3 mb-8">
+      <div className="flex flex-wrap gap-3 mb-4">
         <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${statusClasses[bug.status]}`}>
           {bug.status.replace('_', ' ')}
         </span>
@@ -62,8 +84,47 @@ function BugDetail() {
           {bug.severity}
         </span>
         <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
-          {bug.assignedToId ? 'Assigned' : 'Unassigned'}
+          {bug.assignedTo ? bug.assignedTo.email : 'Unassigned'}
         </span>
+      </div>
+
+      <div className="mb-8">
+        {isAdmin && (
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-500 dark:text-gray-400 shrink-0">Assign to</label>
+            <select
+              value={bug.assignedToId ?? ''}
+              onChange={(e) => handleAssign(e.target.value || null)}
+              disabled={assignLoading}
+              className="input w-auto text-sm"
+            >
+              <option value="">Unassigned</option>
+              {members.map((m) => (
+                <option key={m.userId} value={m.userId}>{m.email}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {!isAdmin && !bug.assignedToId && (
+          <button
+            onClick={() => handleAssign(user!.id)}
+            disabled={assignLoading}
+            className="btn-secondary text-sm"
+          >
+            {assignLoading ? 'Claiming...' : 'Claim'}
+          </button>
+        )}
+
+        {!isAdmin && assignedToSelf && (
+          <button
+            onClick={() => handleAssign(null)}
+            disabled={assignLoading}
+            className="btn-ghost text-sm text-red-500 hover:text-red-600 dark:text-red-400"
+          >
+            {assignLoading ? 'Unassigning...' : 'Unassign'}
+          </button>
+        )}
       </div>
 
       <div className="space-y-6 mb-8">
